@@ -10,10 +10,11 @@ import logging
 # Load environment variables
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_CODE = os.getenv("ADMIN_CODE")
-REGISTRATION_BOT_URL = os.getenv("REGISTRATION_BOT_URL", "https://t.me/YourRegistrationBot")
-CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "contact@yetal.com")
-WEBSITE_URL = os.getenv("WEBSITE_URL", "https://yetal.com")
+
+# Use simple, valid URLs
+REGISTRATION_BOT_URL = "https://t.me/Yetale_products_bot"  
+CONTACT_EMAIL = "semirsultan3@gmail.com"
+WEBSITE_URL = "https://yetal.co"
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -133,8 +134,8 @@ def home():
 
 # Run Flask in a separate thread
 def run_flask():
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 10000))  # Use Render's port
+    app.run(host="0.0.0.0", port=port, debug=False)
 
 # Telegram Bot Functions
 def start(update, context):
@@ -142,9 +143,9 @@ def start(update, context):
     keyboard = [
         [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
         [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
-        [InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)],
+        [InlineKeyboardButton("📱 Registration Bot", url="https://t.me/YetalRegistrationBot")],
         [InlineKeyboardButton("📞 Contact Us", callback_data='contact')],
-        [InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)]
+        [InlineKeyboardButton("🌐 Visit Website", url="https://yetal.com")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -164,11 +165,121 @@ Yetal is Ethiopia's premier e-commerce platform revolutionizing how Ethiopians b
 Use the buttons below to explore more about what Yetal offers!
 """
     
-    update.message.reply_text(
-        welcome_text,
-        reply_markup=reply_markup,
-        parse_mode=ParseMode.MARKDOWN
-    )
+    try:
+        update.message.reply_text(
+            welcome_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        print(f"Error sending start message: {e}")
+        update.message.reply_text(
+            welcome_text + "\n\n📱 Registration: https://t.me/YetalRegistrationBot\n🌐 Website: https://yetal.com",
+            parse_mode=ParseMode.MARKDOWN
+        )
+
+def show_contact_button(update, context):
+    """Handle contact button callback"""
+    query = update.callback_query
+    query.answer()  # Important: answer the callback query first
+    
+    contact_text = """
+📞 *Contact Yetal* 📞
+
+We're here to help you 24/7!
+
+📧 *Email:* contact@yetal.com
+📱 *Telegram:* @YetalSupport
+📞 *Phone:* +251 911 234 567
+🌐 *Website:* https://yetal.com
+
+🏢 *Office Hours:*
+Monday - Friday: 8:30 AM - 6:30 PM
+Saturday: 9:00 AM - 4:00 PM
+Sunday: 10:00 AM - 2:00 PM
+
+📍 *Head Office:*
+Bole Road, Addis Ababa, Ethiopia
+
+📋 *Departments:*
+• 🤝 Customer Support: support@yetal.com
+• 📦 Delivery Issues: delivery@yetal.com
+• 💳 Payment Help: payments@yetal.com
+• 🛍️ Seller Inquiries: sellers@yetal.com
+
+*Average Response Time:* Within 2 hours ⏱️
+"""
+    
+    keyboard = [
+        [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')],
+        [InlineKeyboardButton("📱 Registration Bot", url="https://t.me/YetalRegistrationBot")],
+        [InlineKeyboardButton("📧 Send Email", url="mailto:contact@yetal.com")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    try:
+        query.edit_message_text(
+            contact_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        print(f"Error editing message for contact: {e}")
+        context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=contact_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+
+def contact_command(update, context):
+    """Handle /contact command"""
+    contact_text = """
+📞 *Contact Yetal* 📞
+
+We're here to help you 24/7!
+
+📧 *Email:* contact@yetal.com
+📱 *Telegram:* @YetalSupport
+📞 *Phone:* +251 911 234 567
+🌐 *Website:* https://yetal.com
+
+🏢 *Office Hours:*
+Monday - Friday: 8:30 AM - 6:30 PM
+Saturday: 9:00 AM - 4:00 PM
+Sunday: 10:00 AM - 2:00 PM
+
+📍 *Head Office:*
+Bole Road, Addis Ababa, Ethiopia
+
+📋 *Departments:*
+• 🤝 Customer Support: support@yetal.com
+• 📦 Delivery Issues: delivery@yetal.com
+• 💳 Payment Help: payments@yetal.com
+• 🛍️ Seller Inquiries: sellers@yetal.com
+
+*Average Response Time:* Within 2 hours ⏱️
+"""
+    
+    keyboard = [
+        [InlineKeyboardButton("📱 Registration Bot", url="https://t.me/YetalRegistrationBot")],
+        [InlineKeyboardButton("📧 Send Email", url="mailto:contact@yetal.com")],
+        [InlineKeyboardButton("🌐 Visit Website", url="https://yetal.com")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    try:
+        update.message.reply_text(
+            contact_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        print(f"Error sending contact command: {e}")
+        update.message.reply_text(
+            contact_text,
+            parse_mode=ParseMode.MARKDOWN
+        )
 
 def show_rewards(update, context):
     """Show rewards program information"""
@@ -203,15 +314,24 @@ Earn amazing rewards with every purchase on Yetal!
     
     keyboard = [
         [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')],
-        [InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)]
+        [InlineKeyboardButton("📱 Registration Bot", url="https://t.me/YetalRegistrationBot")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    query.edit_message_text(
-        rewards_text,
-        reply_markup=reply_markup,
-        parse_mode=ParseMode.MARKDOWN
-    )
+    try:
+        query.edit_message_text(
+            rewards_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        print(f"Error editing message for rewards: {e}")
+        context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=rewards_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
 
 def show_discounts(update, context):
     """Show current discounts and promotions"""
@@ -250,60 +370,24 @@ def show_discounts(update, context):
     
     keyboard = [
         [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')],
-        [InlineKeyboardButton("🛒 Shop Now", url=WEBSITE_URL)]
+        [InlineKeyboardButton("🛒 Shop Now", url="https://yetal.com")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    query.edit_message_text(
-        discounts_text,
-        reply_markup=reply_markup,
-        parse_mode=ParseMode.MARKDOWN
-    )
-
-def show_contact(update, context):
-    """Show contact information"""
-    query = update.callback_query
-    query.answer()
-    
-    contact_text = """
-📞 *Contact Yetal* 📞
-
-We're here to help you 24/7!
-
-📧 *Email:* contact@yetal.com
-📱 *Telegram:* @YetalSupport
-📞 *Phone:* +251 911 234 567
-🌐 *Website:* https://yetal.com
-
-🏢 *Office Hours:*
-Monday - Friday: 8:30 AM - 6:30 PM
-Saturday: 9:00 AM - 4:00 PM
-Sunday: 10:00 AM - 2:00 PM
-
-📍 *Head Office:*
-Bole Road, Addis Ababa, Ethiopia
-
-📋 *Departments:*
-• 🤝 Customer Support: support@yetal.com
-• 📦 Delivery Issues: delivery@yetal.com
-• 💳 Payment Help: payments@yetal.com
-• 🛍️ Seller Inquiries: sellers@yetal.com
-
-*Average Response Time:* Within 2 hours ⏱️
-"""
-    
-    keyboard = [
-        [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')],
-        [InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)],
-        [InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    query.edit_message_text(
-        contact_text,
-        reply_markup=reply_markup,
-        parse_mode=ParseMode.MARKDOWN
-    )
+    try:
+        query.edit_message_text(
+            discounts_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        print(f"Error editing message for discounts: {e}")
+        context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=discounts_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
 
 def back_to_main(update, context):
     """Return to main menu"""
@@ -313,9 +397,9 @@ def back_to_main(update, context):
     keyboard = [
         [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
         [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
-        [InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)],
+        [InlineKeyboardButton("📱 Registration Bot", url="https://t.me/YetalRegistrationBot")],
         [InlineKeyboardButton("📞 Contact Us", callback_data='contact')],
-        [InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)]
+        [InlineKeyboardButton("🌐 Visit Website", url="https://yetal.com")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -334,11 +418,20 @@ Welcome back! What would you like to explore today?
 *New this week:* Mega Summer Sale with up to 60% OFF! 🎉
 """
     
-    query.edit_message_text(
-        main_text,
-        reply_markup=reply_markup,
-        parse_mode=ParseMode.MARKDOWN
-    )
+    try:
+        query.edit_message_text(
+            main_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        print(f"Error going back to main: {e}")
+        context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=main_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
 
 def about(update, context):
     """Detailed information about Yetal"""
@@ -377,15 +470,22 @@ To empower Ethiopian businesses and consumers through accessible, secure, and in
     keyboard = [
         [InlineKeyboardButton("🏆 Rewards", callback_data='rewards')],
         [InlineKeyboardButton("💎 Discounts", callback_data='discounts')],
-        [InlineKeyboardButton("📱 Register Now", url=REGISTRATION_BOT_URL)]
+        [InlineKeyboardButton("📱 Register Now", url="https://t.me/YetalRegistrationBot")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    update.message.reply_text(
-        about_text,
-        reply_markup=reply_markup,
-        parse_mode=ParseMode.MARKDOWN
-    )
+    try:
+        update.message.reply_text(
+            about_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        print(f"Error sending about: {e}")
+        update.message.reply_text(
+            about_text + "\n\n📱 Register: https://t.me/YetalRegistrationBot",
+            parse_mode=ParseMode.MARKDOWN
+        )
 
 def help_command(update, context):
     """Help command with all available commands"""
@@ -422,7 +522,7 @@ Here are all available commands:
         parse_mode=ParseMode.MARKDOWN
     )
 
-def register(update, context):
+def register_command(update, context):
     """Registration information"""
     register_text = """
 📱 *Register Your Business on Yetal* 📱
@@ -453,17 +553,24 @@ Ready to start selling on Ethiopia's fastest-growing e-commerce platform?
 """
     
     keyboard = [
-        [InlineKeyboardButton("🤖 Start Registration", url=REGISTRATION_BOT_URL)],
+        [InlineKeyboardButton("🤖 Start Registration", url="https://t.me/YetalRegistrationBot")],
         [InlineKeyboardButton("📞 Contact Support", callback_data='contact')],
         [InlineKeyboardButton("🔙 Back to Main", callback_data='main_menu')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    update.message.reply_text(
-        register_text,
-        reply_markup=reply_markup,
-        parse_mode=ParseMode.MARKDOWN
-    )
+    try:
+        update.message.reply_text(
+            register_text,
+            reply_markup=reply_markup,
+            parse_mode=ParseMode.MARKDOWN
+        )
+    except Exception as e:
+        print(f"Error sending register command: {e}")
+        update.message.reply_text(
+            register_text + "\n\n🤖 Registration: https://t.me/YetalRegistrationBot",
+            parse_mode=ParseMode.MARKDOWN
+        )
 
 def unknown(update, context):
     """Handle unknown commands"""
@@ -475,10 +582,18 @@ def unknown(update, context):
 
 def main():
     """Main function to start the bot"""
+    # Validate BOT_TOKEN
+    if not BOT_TOKEN:
+        print("❌ ERROR: BOT_TOKEN not found in environment variables!")
+        print("💡 Please set BOT_TOKEN in Render environment variables")
+        return
+    
+    print(f"🤖 Bot Token: {BOT_TOKEN[:10]}...")  # Print first 10 chars for verification
+    
     # Start Flask in separate thread
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
-    print("🌐 Flask server started on port 5000")
+    print("🌐 Flask server started")
     
     # Set up logging
     logging.basicConfig(
@@ -486,41 +601,47 @@ def main():
         level=logging.INFO
     )
     
-    # Create updater and dispatcher
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-    
-    # Add command handlers
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("about", about))
-    dp.add_handler(CommandHandler("rewards", show_rewards))
-    dp.add_handler(CommandHandler("discounts", show_discounts))
-    dp.add_handler(CommandHandler("contact", show_contact))
-    dp.add_handler(CommandHandler("help", help_command))
-    dp.add_handler(CommandHandler("register", register))
-    
-    # Add callback query handlers
-    dp.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
-    dp.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
-    dp.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
-    dp.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
-    
-    # Handle unknown commands
-    dp.add_handler(MessageHandler(Filters.command, unknown))
-    
-    # Start the bot with error handling for Render
-    print("🤖 Starting Yetal Advertising Bot...")
-    
-    # For Render: Keep the bot running
-    updater.start_polling(
-        timeout=30,
-        poll_interval=3,
-        drop_pending_updates=True,
-        allowed_updates=['message', 'callback_query']
-    )
-    
-    # Keep the bot running
-    updater.idle()
+    try:
+        # Create updater and dispatcher
+        updater = Updater(BOT_TOKEN, use_context=True)
+        dp = updater.dispatcher
+        
+        # Add command handlers
+        dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("about", about))
+        dp.add_handler(CommandHandler("rewards", show_rewards))
+        dp.add_handler(CommandHandler("discounts", show_discounts))
+        dp.add_handler(CommandHandler("contact", contact_command))
+        dp.add_handler(CommandHandler("help", help_command))
+        dp.add_handler(CommandHandler("register", register_command))
+        
+        # Add callback query handlers
+        dp.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
+        dp.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
+        dp.add_handler(CallbackQueryHandler(show_contact_button, pattern='^contact$'))
+        dp.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
+        
+        # Handle unknown commands
+        dp.add_handler(MessageHandler(Filters.command, unknown))
+        
+        # Start the bot
+        print("🤖 Starting Yetal Advertising Bot...")
+        
+        updater.start_polling(
+            timeout=30,
+            poll_interval=2,
+            drop_pending_updates=True,
+            allowed_updates=['message', 'callback_query']
+        )
+        
+        print("✅ Bot is now running!")
+        
+        # Keep the bot running
+        updater.idle()
+        
+    except Exception as e:
+        print(f"❌ Failed to start bot: {e}")
+        print("💡 Check your BOT_TOKEN and internet connection")
 
 if __name__ == "__main__":
     main()
