@@ -176,7 +176,6 @@ def start(update, context):
     """Send a welcome message with inline keyboard"""
     keyboard = [
     [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
-    [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
     [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
@@ -404,7 +403,7 @@ def back_to_main(update, context):
     query.answer()
     
     keyboard = [
-        [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
+        [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
         [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
