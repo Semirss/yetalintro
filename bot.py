@@ -1,5 +1,4 @@
 import os
-import sys
 from datetime import datetime
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
@@ -7,7 +6,6 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from flask import Flask, render_template_string
 import threading
 import logging
-import time
 
 # Load environment variables
 load_dotenv()
@@ -23,7 +21,6 @@ def validate_url(url):
     if not url:
         return None
     url = url.strip()
-    # Add https:// if not present for web URLs
     if url.startswith("http://") or url.startswith("https://"):
         return url
     elif url.startswith("t.me/"):
@@ -156,16 +153,10 @@ def home():
     </html>
     """
 
-@app.route('/health')
-def health_check():
-    """Health check endpoint for Render"""
-    return "OK", 200
-
-# Run Flask with Gunicorn for production
+# Run Flask in a separate thread
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
-    # Use gunicorn for production
-    os.system(f"gunicorn -w 4 -b 0.0.0.0:{port} bot:app")
+    app.run(host="0.0.0.0", port=port)
 
 def start(update, context):
     """Send a welcome message with inline keyboard"""
@@ -181,10 +172,6 @@ def start(update, context):
         keyboard.append([InlineKeyboardButton("📱 Registration Bot", callback_data='register_info')])
     
     keyboard.append([InlineKeyboardButton("📞 Contact Info", callback_data='contact')])
-    
-    # Add email button only if valid
-    if CONTACT_EMAIL and "@" in CONTACT_EMAIL and "." in CONTACT_EMAIL:
-        keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     # Website button only if valid
     if WEBSITE_URL and WEBSITE_URL.startswith('http'):
@@ -309,46 +296,37 @@ def show_discounts(update, context):
     )
 
 def show_contact(update, context):
-    """Show contact information"""
+    """Show contact information - SIMPLE VERSION"""
     query = update.callback_query
     query.answer()
     
+    # Simple contact text without buttons that cause errors
     contact_text = f"""
 📞 *Contact Yetal* 📞
 
-We're here to help you 24/7!
+Here's how to reach us:
 
-📧 *Email:* {CONTACT_EMAIL or "Not available"}
-📱 *Telegram:* @YetalSupport
-📞 *Phone:* +251 911 234 567
-🌐 *Website:* {WEBSITE_URL or "Not available"}
+📧 *Email:* {CONTACT_EMAIL or "contact@yetal.com"}
 
-🏢 *Office Hours:*
-Monday - Friday: 8:30 AM - 6:30 PM
-Saturday: 9:00 AM - 4:00 PM
-Sunday: 10:00 AM - 2:00 PM
+📱 *Phone:* +251 911 234 567
 
-📍 *Head Office:*
+📱 *Telegram Support:* @YetalSupport
+
+🌐 *Website:* {WEBSITE_URL or "https://yetal.com"}
+
+🏢 *Office Address:*
 Bole Road, Addis Ababa, Ethiopia
 
-📋 *Departments:*
-• 🤝 Customer Support: support@yetal.com
-• 📦 Delivery Issues: delivery@yetal.com
-• 💳 Payment Help: payments@yetal.com
-• 🛍️ Seller Inquiries: sellers@yetal.com
+⏰ *Business Hours:*
+Monday - Friday: 8:30 AM - 6:30 PM
+Saturday: 9:00 AM - 4:00 PM
+Sunday: Closed
 
-*Average Response Time:* Within 2 hours ⏱️
+📧 *For urgent inquiries, please email us directly at:* {CONTACT_EMAIL or "contact@yetal.com"}
 """
     
+    # Simple back button only - no mailto or other buttons
     keyboard = [[InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')]]
-    
-    # Add Registration Bot button only if valid
-    if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
-        keyboard.append([InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)])
-    
-    # Add email button only if valid
-    if CONTACT_EMAIL and "@" in CONTACT_EMAIL and "." in CONTACT_EMAIL:
-        keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -472,16 +450,11 @@ Here are all available commands:
 • /register - Get registration bot link
 • /help - Show this help message
 
-🎯 *Quick Actions:*
-• Click buttons in messages for instant access
-• Use /register to sign up as a seller
-• Check /discounts for latest offers
-• Contact us anytime with /contact
-
-📞 *Need Immediate Help?*
-• Telegram: @YetalSupport
+📞 *Contact Information:*
 • Email: contact@yetal.com
 • Phone: +251 911 234 567
+• Telegram: @YetalSupport
+• Website: https://yetal.com
 
 *We're here 24/7 to assist you!* 🌙
 """
@@ -548,16 +521,16 @@ def register_info(update, context):
     info_text = f"""
 📱 *Registration Information* 📱
 
-To register your business on Yetal, please use:
+To register your business on Yetal:
 
 *Registration Bot:* {REGISTRATION_BOT_URL or "Not available"}
-*Website:* {WEBSITE_URL or "Not available"}
-*Email:* {CONTACT_EMAIL or "Not available"}
 
-*Alternative Contact Methods:*
-1. Visit our website directly
-2. Email us with your business details
-3. Contact @YetalSupport on Telegram
+*Contact for Help:*
+• Email: {CONTACT_EMAIL or "contact@yetal.com"}
+• Phone: +251 911 234 567
+• Telegram: @YetalSupport
+
+*Website:* {WEBSITE_URL or "https://yetal.com"}
 
 We'll help you get registered as soon as possible!
 """
@@ -566,9 +539,6 @@ We'll help you get registered as soon as possible!
         [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')],
         [InlineKeyboardButton("📞 Contact Support", callback_data='contact')]
     ]
-    
-    if CONTACT_EMAIL and "@" in CONTACT_EMAIL and "." in CONTACT_EMAIL:
-        keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -586,103 +556,56 @@ def unknown(update, context):
         parse_mode=ParseMode.MARKDOWN
     )
 
-def error_handler(update, context):
-    """Handle errors"""
-    try:
-        raise context.error
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        if update and update.effective_message:
-            update.effective_message.reply_text(
-                "❌ An error occurred. Please try again later.",
-                parse_mode=ParseMode.MARKDOWN
-            )
-
 def main():
     """Main function to start the bot"""
+    # Start Flask in separate thread
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    print("🌐 Flask server started on port 5000")
+    
     # Set up logging
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO
     )
     
-    logger = logging.getLogger()
+    # Create updater and dispatcher
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
     
-    # Check if bot token is set
-    if not BOT_TOKEN:
-        print("❌ ERROR: BOT_TOKEN not found in environment variables!")
-        print("Please set BOT_TOKEN in your .env file or Render environment variables.")
-        sys.exit(1)
+    # Add command handlers
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("about", about))
+    dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("register", register))
     
-    try:
-        # Create updater and dispatcher
-        updater = Updater(BOT_TOKEN, use_context=True)
-        dp = updater.dispatcher
-        
-        # Add error handler
-        dp.add_error_handler(error_handler)
-        
-        # Add command handlers
-        dp.add_handler(CommandHandler("start", start))
-        dp.add_handler(CommandHandler("about", about))
-        dp.add_handler(CommandHandler("help", help_command))
-        dp.add_handler(CommandHandler("register", register))
-        
-        # Add callback query handlers
-        dp.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
-        dp.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
-        dp.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
-        dp.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
-        dp.add_handler(CallbackQueryHandler(register_info, pattern='^register_info$'))
-        
-        # Handle unknown commands
-        dp.add_handler(MessageHandler(Filters.command, unknown))
-        
-        # Start the bot
-        print("🤖 Starting Yetal Advertising Bot...")
-        print(f"Using BOT_TOKEN: {'Set' if BOT_TOKEN else 'Not Set'}")
-        print(f"Using REGISTRATION_BOT_URL: {REGISTRATION_BOT_URL}")
-        print(f"Using WEBSITE_URL: {WEBSITE_URL}")
-        print(f"Using CONTACT_EMAIL: {CONTACT_EMAIL}")
-        
-        # Start Flask in separate thread for web server
-        flask_thread = threading.Thread(target=run_flask, daemon=True)
-        flask_thread.start()
-        print("🌐 Flask server started")
-        
-        # For Render: Keep the bot running with error handling
-        print("🔄 Starting bot polling...")
-        
-        # Try to start polling with retry logic
-        retry_count = 0
-        max_retries = 3
-        
-        while retry_count < max_retries:
-            try:
-                updater.start_polling(
-                    timeout=30,
-                    poll_interval=3,
-                    drop_pending_updates=True,
-                    allowed_updates=['message', 'callback_query']
-                )
-                print("✅ Bot started successfully!")
-                break
-            except Exception as e:
-                retry_count += 1
-                print(f"❌ Attempt {retry_count}/{max_retries} failed: {e}")
-                if retry_count < max_retries:
-                    print(f"⏳ Retrying in 5 seconds...")
-                    time.sleep(5)
-                else:
-                    print("❌ Max retries reached. Bot failed to start.")
-                    raise
-        
-        # Keep the bot running
-        updater.idle()
-        
-    except Exception as e:
-        print(f"❌ Fatal error: {e}")
-        sys.exit(1)
+    # Add callback query handlers
+    dp.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
+    dp.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
+    dp.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
+    dp.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
+    dp.add_handler(CallbackQueryHandler(register_info, pattern='^register_info$'))
+    
+    # Handle unknown commands
+    dp.add_handler(MessageHandler(Filters.command, unknown))
+    
+    # Start the bot
+    print("🤖 Starting Yetal Advertising Bot...")
+    print(f"Using BOT_TOKEN: {'Set' if BOT_TOKEN else 'Not Set'}")
+    print(f"Using REGISTRATION_BOT_URL: {REGISTRATION_BOT_URL}")
+    print(f"Using WEBSITE_URL: {WEBSITE_URL}")
+    print(f"Using CONTACT_EMAIL: {CONTACT_EMAIL}")
+    
+    # For Render: Keep the bot running
+    updater.start_polling(
+        timeout=30,
+        poll_interval=3,
+        drop_pending_updates=True,
+        allowed_updates=['message', 'callback_query']
+    )
+    
+    # Keep the bot running
+    updater.idle()
 
 if __name__ == "__main__":
     main()
