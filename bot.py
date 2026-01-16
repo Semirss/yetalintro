@@ -175,8 +175,9 @@ def webhook():
 def start(update, context):
     """Send a welcome message with inline keyboard"""
     keyboard = [
-        [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
-        [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
+    [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
+    [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
+    [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
     if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
@@ -209,6 +210,59 @@ Use the buttons below to explore more about what Yetal offers!
 
     update.message.reply_text(
         welcome_text,
+        reply_markup=reply_markup,
+        parse_mode=ParseMode.MARKDOWN
+    )
+def show_daily_promo(update, context):
+    query = update.callback_query
+    query.answer()
+
+    promo_text = """
+🔥 *Daily First Subscribers Rush – Win Big with Every Purchase!* 🔥
+
+⏳ *Duration:* 5 Days  
+📅 *Runs:* Every Day  
+
+🎯 *How It Works*
+• Winners are selected strictly by *subscription time*
+• First-come, first-served (exact timestamp)
+• Every buyer gets a *15% discount* 🎉
+
+🏆 *Daily Prize Tiers*
+
+🥇 *Top 2 Fastest Subscribers*
+🎁 Extra chewing gum + chocolate prize pack  
+💰 Value: ~1,000 ETB each
+
+🥈 *Next 3 Subscribers (3–5)*
+🍫 Chocolate prize pack  
+💰 Value: ~500 ETB each
+
+🥉 *Next 20 Subscribers (6–25)*
+🎁 Assorted products or vouchers  
+💰 Value: ~250 ETB each
+
+✅ *All Other Subscribers*
+• Guaranteed **15% discount** (cash or in-kind)
+
+📌 *Important Notes*
+• Total daily winners: **25**
+• Unlimited participants
+• Prizes reset every day
+• 100% transparent & fair (timestamp-based)
+
+🚀 *Subscribe early every day to win BIG!*
+"""
+
+    keyboard = [
+        [InlineKeyboardButton("📱 Subscribe / Buy Now", url=WEBSITE_URL)],
+        [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    query.edit_message_text(
+        promo_text,
         reply_markup=reply_markup,
         parse_mode=ParseMode.MARKDOWN
     )
@@ -579,6 +633,7 @@ def setup_bot():
         
         # Add callback query handlers
         dispatcher_instance.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
+        dispatcher_instance.add_handler(CallbackQueryHandler(show_daily_promo, pattern='^daily_promo$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
