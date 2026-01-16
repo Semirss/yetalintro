@@ -374,10 +374,9 @@ Welcome back! What would you like to explore today?
 🎯 *Quick Links:*
 • 🏆 Rewards Program - Earn points on every purchase
 • 💎 Special Discounts - Amazing deals waiting for you
-• 📱 Registration Bot - Register your business easily
 • 📞 Contact Us - We're here to help 24/7
 • 🌐 Website - Visit our full platform
-
+• 📱 If u are a shop owner use this to register
 *New this week:* Mega Summer Sale with up to 60% OFF! 🎉
 """
     
