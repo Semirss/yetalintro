@@ -354,16 +354,16 @@ def back_to_main(update, context):
         [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
-    if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
-        keyboard.append([InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)])
-    else:
-        keyboard.append([InlineKeyboardButton("📱 Registration Bot", callback_data='register_info')])
+
     
     keyboard.append([InlineKeyboardButton("📞 Contact Us", callback_data='contact')])
     
     if WEBSITE_URL and WEBSITE_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)])
-    
+    if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", url=REGISTRATION_BOT_URL)])
+    else:
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", callback_data='register_info')])  
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     main_text = """
