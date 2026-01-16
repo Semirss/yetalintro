@@ -140,11 +140,12 @@ def run_flask():
 def start(update, context):
     """Send a welcome message with inline keyboard"""
     keyboard = [
-        [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
-        [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
-        [InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)],
-        [InlineKeyboardButton("📞 Contact Us", callback_data='contact')],
-        [InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)]
+    [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
+    [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
+    [InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)],
+    [InlineKeyboardButton("📞 Contact Info", callback_data='contact')],
+    [InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")]
+    [InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
