@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
@@ -6,6 +7,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from flask import Flask, render_template_string
 import threading
 import logging
+import time
 
 # Load environment variables
 load_dotenv()
@@ -29,26 +31,14 @@ def validate_url(url):
     else:
         return f"https://{url}"
 
-def safe_mailto(email):
-    """Create safe mailto URL WITHOUT URL encoding"""
-    if not email:
-        return None
-    email = email.strip()
-    if "@" not in email or "." not in email:
-        return None
-    # Return mailto URL without URL encoding
-    return f"mailto:{email}"
-
 # Validate all URLs
 REGISTRATION_BOT_URL = validate_url(REGISTRATION_BOT_URL)
 WEBSITE_URL = validate_url(WEBSITE_URL)
-email_url = safe_mailto(CONTACT_EMAIL)
 
 # Log validation results
 print(f"Registration URL: {REGISTRATION_BOT_URL}")
 print(f"Website URL: {WEBSITE_URL}")
 print(f"Contact Email: {CONTACT_EMAIL}")
-print(f"Email URL: {email_url}")
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -166,10 +156,16 @@ def home():
     </html>
     """
 
-# Run Flask in a separate thread
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Render"""
+    return "OK", 200
+
+# Run Flask with Gunicorn for production
 def run_flask():
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    # Use gunicorn for production
+    os.system(f"gunicorn -w 4 -b 0.0.0.0:{port} bot:app")
 
 def start(update, context):
     """Send a welcome message with inline keyboard"""
@@ -187,7 +183,7 @@ def start(update, context):
     keyboard.append([InlineKeyboardButton("📞 Contact Info", callback_data='contact')])
     
     # Add email button only if valid
-    if CONTACT_EMAIL and "@" in CONTACT_EMAIL:
+    if CONTACT_EMAIL and "@" in CONTACT_EMAIL and "." in CONTACT_EMAIL:
         keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     # Website button only if valid
@@ -351,7 +347,7 @@ Bole Road, Addis Ababa, Ethiopia
         keyboard.append([InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)])
     
     # Add email button only if valid
-    if CONTACT_EMAIL and "@" in CONTACT_EMAIL:
+    if CONTACT_EMAIL and "@" in CONTACT_EMAIL and "." in CONTACT_EMAIL:
         keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -571,7 +567,7 @@ We'll help you get registered as soon as possible!
         [InlineKeyboardButton("📞 Contact Support", callback_data='contact')]
     ]
     
-    if CONTACT_EMAIL and "@" in CONTACT_EMAIL:
+    if CONTACT_EMAIL and "@" in CONTACT_EMAIL and "." in CONTACT_EMAIL:
         keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -590,56 +586,103 @@ def unknown(update, context):
         parse_mode=ParseMode.MARKDOWN
     )
 
+def error_handler(update, context):
+    """Handle errors"""
+    try:
+        raise context.error
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        if update and update.effective_message:
+            update.effective_message.reply_text(
+                "❌ An error occurred. Please try again later.",
+                parse_mode=ParseMode.MARKDOWN
+            )
+
 def main():
     """Main function to start the bot"""
-    # Start Flask in separate thread
-    flask_thread = threading.Thread(target=run_flask, daemon=True)
-    flask_thread.start()
-    print("🌐 Flask server started on port 5000")
-    
     # Set up logging
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO
     )
     
-    # Create updater and dispatcher
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+    logger = logging.getLogger()
     
-    # Add command handlers
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("about", about))
-    dp.add_handler(CommandHandler("help", help_command))
-    dp.add_handler(CommandHandler("register", register))
+    # Check if bot token is set
+    if not BOT_TOKEN:
+        print("❌ ERROR: BOT_TOKEN not found in environment variables!")
+        print("Please set BOT_TOKEN in your .env file or Render environment variables.")
+        sys.exit(1)
     
-    # Add callback query handlers
-    dp.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
-    dp.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
-    dp.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
-    dp.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
-    dp.add_handler(CallbackQueryHandler(register_info, pattern='^register_info$'))
-    
-    # Handle unknown commands
-    dp.add_handler(MessageHandler(Filters.command, unknown))
-    
-    # Start the bot with error handling for Render
-    print("🤖 Starting Yetal Advertising Bot...")
-    print(f"Using BOT_TOKEN: {'Set' if BOT_TOKEN else 'Not Set'}")
-    print(f"Using REGISTRATION_BOT_URL: {REGISTRATION_BOT_URL}")
-    print(f"Using WEBSITE_URL: {WEBSITE_URL}")
-    print(f"Using CONTACT_EMAIL: {CONTACT_EMAIL}")
-    
-    # For Render: Keep the bot running
-    updater.start_polling(
-        timeout=30,
-        poll_interval=3,
-        drop_pending_updates=True,
-        allowed_updates=['message', 'callback_query']
-    )
-    
-    # Keep the bot running
-    updater.idle()
+    try:
+        # Create updater and dispatcher
+        updater = Updater(BOT_TOKEN, use_context=True)
+        dp = updater.dispatcher
+        
+        # Add error handler
+        dp.add_error_handler(error_handler)
+        
+        # Add command handlers
+        dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("about", about))
+        dp.add_handler(CommandHandler("help", help_command))
+        dp.add_handler(CommandHandler("register", register))
+        
+        # Add callback query handlers
+        dp.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
+        dp.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
+        dp.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
+        dp.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
+        dp.add_handler(CallbackQueryHandler(register_info, pattern='^register_info$'))
+        
+        # Handle unknown commands
+        dp.add_handler(MessageHandler(Filters.command, unknown))
+        
+        # Start the bot
+        print("🤖 Starting Yetal Advertising Bot...")
+        print(f"Using BOT_TOKEN: {'Set' if BOT_TOKEN else 'Not Set'}")
+        print(f"Using REGISTRATION_BOT_URL: {REGISTRATION_BOT_URL}")
+        print(f"Using WEBSITE_URL: {WEBSITE_URL}")
+        print(f"Using CONTACT_EMAIL: {CONTACT_EMAIL}")
+        
+        # Start Flask in separate thread for web server
+        flask_thread = threading.Thread(target=run_flask, daemon=True)
+        flask_thread.start()
+        print("🌐 Flask server started")
+        
+        # For Render: Keep the bot running with error handling
+        print("🔄 Starting bot polling...")
+        
+        # Try to start polling with retry logic
+        retry_count = 0
+        max_retries = 3
+        
+        while retry_count < max_retries:
+            try:
+                updater.start_polling(
+                    timeout=30,
+                    poll_interval=3,
+                    drop_pending_updates=True,
+                    allowed_updates=['message', 'callback_query']
+                )
+                print("✅ Bot started successfully!")
+                break
+            except Exception as e:
+                retry_count += 1
+                print(f"❌ Attempt {retry_count}/{max_retries} failed: {e}")
+                if retry_count < max_retries:
+                    print(f"⏳ Retrying in 5 seconds...")
+                    time.sleep(5)
+                else:
+                    print("❌ Max retries reached. Bot failed to start.")
+                    raise
+        
+        # Keep the bot running
+        updater.idle()
+        
+    except Exception as e:
+        print(f"❌ Fatal error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
