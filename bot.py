@@ -6,15 +6,14 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from flask import Flask, render_template_string
 import threading
 import logging
-import urllib.parse
 
 # Load environment variables
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CODE = os.getenv("ADMIN_CODE")
-REGISTRATION_BOT_URL = os.getenv("REGISTRATION_BOT_URL", "https://t.me/Yetale_products_bot")
-CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "semirsultan3@gmail.com")
-WEBSITE_URL = os.getenv("WEBSITE_URL", "https://yetal.co")
+REGISTRATION_BOT_URL = os.getenv("REGISTRATION_BOT_URL", "https://t.me/YourRegistrationBot")
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "contact@yetal.com")
+WEBSITE_URL = os.getenv("WEBSITE_URL", "https://yetal.com")
 
 # Validate URLs
 def validate_url(url):
@@ -27,24 +26,18 @@ def validate_url(url):
         return url
     elif url.startswith("t.me/"):
         return f"https://{url}"
-    elif "@" in url:  # Email
-        return f"mailto:{url}"
     else:
         return f"https://{url}"
 
 def safe_mailto(email):
-    """Create safe mailto URL"""
+    """Create safe mailto URL WITHOUT URL encoding"""
     if not email:
         return None
     email = email.strip()
     if "@" not in email or "." not in email:
         return None
-    # Basic email validation
-    try:
-        # URL encode the email
-        return f"mailto:{urllib.parse.quote(email)}"
-    except:
-        return None
+    # Return mailto URL without URL encoding
+    return f"mailto:{email}"
 
 # Validate all URLs
 REGISTRATION_BOT_URL = validate_url(REGISTRATION_BOT_URL)
@@ -54,6 +47,7 @@ email_url = safe_mailto(CONTACT_EMAIL)
 # Log validation results
 print(f"Registration URL: {REGISTRATION_BOT_URL}")
 print(f"Website URL: {WEBSITE_URL}")
+print(f"Contact Email: {CONTACT_EMAIL}")
 print(f"Email URL: {email_url}")
 
 # Initialize Flask app
@@ -193,8 +187,8 @@ def start(update, context):
     keyboard.append([InlineKeyboardButton("📞 Contact Info", callback_data='contact')])
     
     # Add email button only if valid
-    if email_url and email_url.startswith('mailto:'):
-        keyboard.append([InlineKeyboardButton("📧 Send Email", url=email_url)])
+    if CONTACT_EMAIL and "@" in CONTACT_EMAIL:
+        keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     # Website button only if valid
     if WEBSITE_URL and WEBSITE_URL.startswith('http'):
@@ -328,10 +322,10 @@ def show_contact(update, context):
 
 We're here to help you 24/7!
 
-📧 *Email:* {CONTACT_EMAIL}
+📧 *Email:* {CONTACT_EMAIL or "Not available"}
 📱 *Telegram:* @YetalSupport
 📞 *Phone:* +251 911 234 567
-🌐 *Website:* {WEBSITE_URL}
+🌐 *Website:* {WEBSITE_URL or "Not available"}
 
 🏢 *Office Hours:*
 Monday - Friday: 8:30 AM - 6:30 PM
@@ -357,8 +351,8 @@ Bole Road, Addis Ababa, Ethiopia
         keyboard.append([InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)])
     
     # Add email button only if valid
-    if email_url and email_url.startswith('mailto:'):
-        keyboard.append([InlineKeyboardButton("📧 Send Email", url=email_url)])
+    if CONTACT_EMAIL and "@" in CONTACT_EMAIL:
+        keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -577,8 +571,8 @@ We'll help you get registered as soon as possible!
         [InlineKeyboardButton("📞 Contact Support", callback_data='contact')]
     ]
     
-    if email_url and email_url.startswith('mailto:'):
-        keyboard.append([InlineKeyboardButton("📧 Send Email", url=email_url)])
+    if CONTACT_EMAIL and "@" in CONTACT_EMAIL:
+        keyboard.append([InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
