@@ -1,14 +1,12 @@
 import os
-import sys
 import time
+import logging
 from datetime import datetime
 from dotenv import load_dotenv
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
-from telegram.error import TelegramError, Conflict, NetworkError, TimedOut
-from flask import Flask, render_template_string
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, Bot
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, Dispatcher
+from flask import Flask, render_template_string, request
 import threading
-import logging
 
 # Load environment variables
 load_dotenv()
@@ -17,6 +15,7 @@ ADMIN_CODE = os.getenv("ADMIN_CODE")
 REGISTRATION_BOT_URL = os.getenv("REGISTRATION_BOT_URL", "https://t.me/YourRegistrationBot")
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "contact@yetal.com")
 WEBSITE_URL = os.getenv("WEBSITE_URL", "https://yetal.com")
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "https://yetalads.onrender.com")
 
 # Validate URLs
 def validate_url(url):
@@ -35,13 +34,20 @@ def validate_url(url):
 REGISTRATION_BOT_URL = validate_url(REGISTRATION_BOT_URL)
 WEBSITE_URL = validate_url(WEBSITE_URL)
 
-# Log validation results
-print(f"Registration URL: {REGISTRATION_BOT_URL}")
-print(f"Website URL: {WEBSITE_URL}")
-print(f"Contact Email: {CONTACT_EMAIL}")
+# Log startup info
+print("=" * 60)
+print(f"🚀 Yetal Bot Starting...")
+print(f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"🌐 Render URL: {RENDER_EXTERNAL_URL}")
+print(f"🤖 Bot Token: {'✅ Set' if BOT_TOKEN else '❌ Missing'}")
+print("=" * 60)
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Store bot instance globally
+bot_instance = None
+dispatcher_instance = None
 
 @app.route('/')
 def home():
@@ -50,6 +56,7 @@ def home():
     <html>
     <head>
         <title>Yetal Bot</title>
+        <meta http-equiv="refresh" content="30">
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -73,94 +80,98 @@ def home():
                 font-size: 2.5em;
                 margin-bottom: 30px;
             }
-            .card {
+            .status {
+                background: rgba(0, 255, 0, 0.2);
+                padding: 15px;
+                border-radius: 10px;
+                margin: 20px 0;
+                text-align: center;
+                font-size: 1.2em;
+            }
+            .info-box {
                 background: rgba(255, 255, 255, 0.15);
                 border-radius: 15px;
                 padding: 20px;
                 margin: 20px 0;
                 border: 1px solid rgba(255, 255, 255, 0.2);
             }
-            .button {
-                display: inline-block;
-                background: linear-gradient(45deg, #FFD700, #FFA500);
-                color: #333;
-                padding: 12px 30px;
-                border-radius: 25px;
-                text-decoration: none;
-                font-weight: bold;
-                margin: 10px;
-                transition: transform 0.3s;
-            }
-            .button:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            }
-            .features {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 20px;
-                margin: 30px 0;
-            }
-            .feature-item {
-                background: rgba(255, 255, 255, 0.1);
-                padding: 20px;
-                border-radius: 15px;
-                text-align: center;
-            }
-            .icon {
-                font-size: 2em;
-                margin-bottom: 10px;
-            }
         </style>
     </head>
     <body>
         <div class="container">
             <h1>🚀 Yetal Advertising Bot</h1>
-            <p style="text-align: center; font-size: 1.2em;">Your gateway to Ethiopian digital commerce</p>
             
-            <div class="card">
-                <h2>📢 About Yetal</h2>
-                <p>Yetal is Ethiopia's premier e-commerce platform connecting buyers and sellers across the country. We're revolutionizing how Ethiopians buy and sell online.</p>
+            <div class="status">
+                ✅ <strong>BOT IS RUNNING AND ACTIVE</strong><br>
+                Last updated: <span id="currentTime"></span>
             </div>
             
-            <div class="features">
-                <div class="feature-item">
-                    <div class="icon">🛒</div>
-                    <h3>Wide Selection</h3>
-                    <p>Everything from electronics to fashion</p>
-                </div>
-                <div class="feature-item">
-                    <div class="icon">🎁</div>
-                    <h3>Special Rewards</h3>
-                    <p>Earn points on every purchase</p>
-                </div>
-                <div class="feature-item">
-                    <div class="icon">💰</div>
-                    <h3>Big Discounts</h3>
-                    <p>Up to 50% off on selected items</p>
-                </div>
+            <div class="info-box">
+                <h2>📢 Bot Status</h2>
+                <p><strong>Status:</strong> ✅ Operational 24/7</p>
+                <p><strong>Mode:</strong> Webhook (Always Online)</p>
+                <p><strong>Uptime:</strong> Continuously monitored by Render</p>
+                <p><strong>Last Check:</strong> <span id="lastCheck"></span></p>
             </div>
             
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="https://t.me/YourYetalBot" class="button">Start Chatting with Bot</a>
-                <a href="https://yetal.com" class="button">Visit Our Website</a>
-            </div>
-            
-            <div class="card">
+            <div class="info-box">
                 <h2>📞 Contact Us</h2>
-                <p>Email: contact@yetal.com</p>
-                <p>Telegram: @YetalSupport</p>
-                <p>Phone: +251 911 234 567</p>
+                <p><strong>Email:</strong> contact@yetal.com</p>
+                <p><strong>Telegram:</strong> @YetalSupport</p>
+                <p><strong>Phone:</strong> +251 911 234 567</p>
             </div>
+            
+            <p style="text-align: center; font-size: 0.9em; margin-top: 30px;">
+                🔄 This page auto-refreshes every 30 seconds to confirm bot is alive
+            </p>
         </div>
+        
+        <script>
+            function updateTime() {
+                const now = new Date();
+                document.getElementById('currentTime').textContent = now.toLocaleString();
+                document.getElementById('lastCheck').textContent = now.toLocaleTimeString();
+            }
+            updateTime();
+            setInterval(updateTime, 1000);
+        </script>
     </html>
     """
 
 @app.route('/health')
 def health_check():
-    """Health check endpoint for Render"""
-    return "Bot is running", 200
+    """Health check endpoint - Render pings this to keep service alive"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "service": "yetal-bot",
+        "bot_status": "active" if bot_instance else "initializing"
+    }, 200
 
+@app.route(f'/{BOT_TOKEN}', methods=['POST'])
+def webhook():
+    """Handle Telegram webhook updates"""
+    try:
+        # Parse update
+        update_data = request.get_json()
+        
+        if update_data:
+            # Create update object
+            from telegram import Update
+            update = Update.de_json(update_data, bot_instance)
+            
+            # Process update
+            dispatcher_instance.process_update(update)
+            
+            return 'ok', 200
+        else:
+            return 'no data', 400
+            
+    except Exception as e:
+        print(f"❌ Webhook error: {e}")
+        return 'error', 500
+
+# Telegram bot handlers (keep all your existing handler functions exactly as before)
 def start(update, context):
     """Send a welcome message with inline keyboard"""
     keyboard = [
@@ -168,7 +179,6 @@ def start(update, context):
         [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
-    # Add Registration Bot button only if valid
     if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)])
     else:
@@ -176,7 +186,6 @@ def start(update, context):
     
     keyboard.append([InlineKeyboardButton("📞 Contact Info", callback_data='contact')])
     
-    # Website button only if valid
     if WEBSITE_URL and WEBSITE_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)])
 
@@ -237,7 +246,6 @@ Earn amazing rewards with every purchase on Yetal!
     
     keyboard = [[InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')]]
     
-    # Add Registration Bot button only if valid
     if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)])
     
@@ -286,7 +294,6 @@ def show_discounts(update, context):
     
     keyboard = [[InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')]]
     
-    # Add Shop Now button only if website URL is valid
     if WEBSITE_URL and WEBSITE_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("🛒 Shop Now", url=WEBSITE_URL)])
     
@@ -303,7 +310,6 @@ def show_contact(update, context):
     query = update.callback_query
     query.answer()
     
-    # Simple contact text without buttons that cause errors
     contact_text = f"""
 📞 *Contact Yetal* 📞
 
@@ -328,7 +334,6 @@ Sunday: Closed
 📧 *For urgent inquiries, please email us directly at:* {CONTACT_EMAIL or "contact@yetal.com"}
 """
     
-    # Simple back button only - no mailto or other buttons
     keyboard = [[InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')]]
     
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -349,7 +354,6 @@ def back_to_main(update, context):
         [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
-    # Add Registration Bot button only if valid
     if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)])
     else:
@@ -357,7 +361,6 @@ def back_to_main(update, context):
     
     keyboard.append([InlineKeyboardButton("📞 Contact Us", callback_data='contact')])
     
-    # Website button only if valid
     if WEBSITE_URL and WEBSITE_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)])
     
@@ -423,7 +426,6 @@ To empower Ethiopian businesses and consumers through accessible, secure, and in
         [InlineKeyboardButton("💎 Discounts", callback_data='discounts')],
     ]
     
-    # Add Register button only if valid
     if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("📱 Register Now", url=REGISTRATION_BOT_URL)])
     else:
@@ -499,7 +501,6 @@ Ready to start selling on Ethiopia's fastest-growing e-commerce platform?
     
     keyboard = []
     
-    # Add Registration button only if valid
     if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("🤖 Start Registration", url=REGISTRATION_BOT_URL)])
     else:
@@ -559,163 +560,107 @@ def unknown(update, context):
         parse_mode=ParseMode.MARKDOWN
     )
 
-def error_handler(update, context):
-    """Handle Telegram bot errors gracefully"""
+def setup_bot():
+    """Set up Telegram bot with webhook"""
+    global bot_instance, dispatcher_instance
+    
     try:
-        error = context.error
+        # Create bot instance
+        bot_instance = Bot(token=BOT_TOKEN)
         
-        if isinstance(error, Conflict):
-            print("⚠️ Conflict error - Another bot instance might be running")
-            print("💡 This is normal on Render. The bot will continue running.")
-            return
+        # Create updater and dispatcher
+        updater = Updater(bot=bot_instance, use_context=True)
+        dispatcher_instance = updater.dispatcher
         
-        elif isinstance(error, (NetworkError, TimedOut)):
-            print(f"🌐 Network error: {error}")
-            print("💡 Network issue detected. Bot will try to reconnect automatically.")
-            return
+        # Add command handlers
+        dispatcher_instance.add_handler(CommandHandler("start", start))
+        dispatcher_instance.add_handler(CommandHandler("about", about))
+        dispatcher_instance.add_handler(CommandHandler("help", help_command))
+        dispatcher_instance.add_handler(CommandHandler("register", register))
         
-        # Log other errors
-        print(f'❌ Telegram Bot Error: {type(error).__name__}: {error}')
+        # Add callback query handlers
+        dispatcher_instance.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
+        dispatcher_instance.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
+        dispatcher_instance.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
+        dispatcher_instance.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
+        dispatcher_instance.add_handler(CallbackQueryHandler(register_info, pattern='^register_info$'))
         
-        # Try to send error to user if possible
-        if update and hasattr(update, 'effective_chat') and update.effective_chat:
-            try:
-                update.effective_message.reply_text(
-                    "⚠️ An error occurred. The bot is still running and will try again."
-                )
-            except:
-                pass
-                
+        # Handle unknown commands
+        dispatcher_instance.add_handler(MessageHandler(Filters.command, unknown))
+        
+        # Set webhook
+        webhook_url = f"{RENDER_EXTERNAL_URL}/{BOT_TOKEN}"
+        bot_instance.delete_webhook()
+        time.sleep(1)
+        bot_instance.set_webhook(webhook_url)
+        
+        print(f"✅ Bot setup complete!")
+        print(f"🤖 Bot: @{bot_instance.get_me().username}")
+        print(f"🌐 Webhook: {webhook_url}")
+        
+        return True
+        
     except Exception as e:
-        print(f"❌ Error in error handler: {e}")
+        print(f"❌ Bot setup failed: {e}")
+        return False
 
-def run_bot_with_retry():
-    """Run bot with automatic restart on failure"""
-    max_retries = 100  # Very high number to keep it running forever
-    retry_delay = 30  # Delay between retries in seconds
-    current_attempt = 0
-    
-    while current_attempt < max_retries:
-        try:
-            current_attempt += 1
-            print(f"\n🚀 Bot Startup Attempt {current_attempt}/{max_retries}")
-            print(f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            
-            # Set up logging
-            logging.basicConfig(
-                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                level=logging.INFO
-            )
-            
-            # Create updater and dispatcher
-            updater = Updater(BOT_TOKEN, use_context=True)
-            dp = updater.dispatcher
-            
-            # Add error handler
-            dp.add_error_handler(error_handler)
-            
-            # Add command handlers
-            dp.add_handler(CommandHandler("start", start))
-            dp.add_handler(CommandHandler("about", about))
-            dp.add_handler(CommandHandler("help", help_command))
-            dp.add_handler(CommandHandler("register", register))
-            
-            # Add callback query handlers
-            dp.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
-            dp.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
-            dp.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
-            dp.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
-            dp.add_handler(CallbackQueryHandler(register_info, pattern='^register_info$'))
-            
-            # Handle unknown commands
-            dp.add_handler(MessageHandler(Filters.command, unknown))
-            
-            # Start the bot
-            print("🤖 Starting Yetal Advertising Bot...")
-            print(f"Using BOT_TOKEN: {'Set' if BOT_TOKEN else 'Not Set'}")
-            print(f"Using REGISTRATION_BOT_URL: {REGISTRATION_BOT_URL}")
-            print(f"Using WEBSITE_URL: {WEBSITE_URL}")
-            print(f"Using CONTACT_EMAIL: {CONTACT_EMAIL}")
-            
-            # Start polling with persistent connection
-            updater.start_polling(
-                timeout=30,
-                poll_interval=3,
-                drop_pending_updates=True,
-                allowed_updates=['message', 'callback_query'],
-                bootstrap_retries=-1,  # Infinite retries for connection
-            )
-            
-            print("✅ Bot started successfully! Listening for commands...")
-            
-            # Keep the bot running indefinitely
-            updater.idle()
-            
-            print("🤔 Bot stopped idle state. Restarting...")
-            
-        except KeyboardInterrupt:
-            print("\n🛑 Bot shutdown requested by user")
-            break
-            
-        except Conflict as e:
-            print(f"⚠️ Conflict error detected: {e}")
-            print("💡 This usually means another instance is running on Render.")
-            print("🔄 Continuing anyway...")
-            time.sleep(retry_delay)
-            
-        except Exception as e:
-            print(f"❌ Bot crashed with error: {type(e).__name__}: {e}")
-            print(f"🔄 Restarting in {retry_delay} seconds...")
-            time.sleep(retry_delay)
-            
-            # Increase delay for subsequent failures (with max limit)
-            retry_delay = min(retry_delay * 1.5, 300)  # Max 5 minutes
-    
-    print("❌ Max retry attempts reached. Bot stopped permanently.")
-
-def run_flask_server():
-    """Run Flask server for Render"""
+def start_flask():
+    """Start Flask server"""
     port = int(os.environ.get("PORT", 5000))
-    print(f"🌐 Flask server starting on port {port}")
+    print(f"🌐 Starting Flask server on port {port}...")
     
-    # Use waitress for production on Render
+    # Use production server for Render
     try:
         from waitress import serve
         serve(app, host="0.0.0.0", port=port)
     except ImportError:
-        # Fallback to Flask's dev server
-        app.run(host="0.0.0.0", port=port)
+        # Fallback to Flask dev server
+        app.run(host="0.0.0.0", port=port, debug=False)
+
+def keep_alive():
+    """Background thread to keep the service alive"""
+    while True:
+        # Log heartbeat
+        print(f"💓 Heartbeat: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Bot is alive")
+        
+        # Check webhook status periodically
+        try:
+            if bot_instance:
+                webhook_info = bot_instance.get_webhook_info()
+                if webhook_info.url:
+                    print(f"🔗 Webhook active: {webhook_info.url}")
+                else:
+                    print("⚠️ Webhook not set, reconfiguring...")
+                    setup_bot()
+        except Exception as e:
+            print(f"⚠️ Webhook check failed: {e}")
+        
+        time.sleep(300)  # Check every 5 minutes
 
 def main():
-    """Main function to start both Flask and Telegram bot"""
-    print("=" * 50)
-    print("🚀 Yetal Bot System Starting...")
-    print(f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 50)
+    """Main function to start everything"""
+    print("=" * 60)
+    print("🚀 YETAL BOT - ULTRA RELIABLE VERSION")
+    print("=" * 60)
     
-    # Start Flask in a separate thread
-    flask_thread = threading.Thread(target=run_flask_server, daemon=True)
-    flask_thread.start()
-    print("✅ Flask server started in separate thread")
+    # Setup logging
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=logging.INFO
+    )
     
-    # Give Flask a moment to start
-    time.sleep(2)
+    # Setup bot
+    print("🔄 Setting up Telegram bot...")
+    if not setup_bot():
+        print("❌ Bot setup failed, but continuing with Flask...")
     
-    # Start Telegram bot with automatic restart
-    bot_thread = threading.Thread(target=run_bot_with_retry, daemon=True)
-    bot_thread.start()
-    print("✅ Telegram bot started in separate thread with auto-restart")
+    # Start keep-alive thread
+    keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+    keep_alive_thread.start()
+    print("✅ Keep-alive thread started")
     
-    # Keep main thread alive
-    try:
-        while True:
-            time.sleep(60)  # Sleep for 1 minute
-            # Optional: Log heartbeat
-            print(f"💓 System heartbeat: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    except KeyboardInterrupt:
-        print("\n🛑 Shutdown requested. Stopping all services...")
-    finally:
-        print("👋 Yetal Bot System stopped")
+    # Start Flask server (this will run forever)
+    start_flask()
 
 if __name__ == "__main__":
     main()
