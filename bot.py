@@ -136,24 +136,42 @@ def run_flask():
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
 
-# Telegram Bot Functions
+def safe_mailto(email):
+    email = (email or "").strip()
+    if "@" not in email:
+        return None
+    return f"mailto:{email}"
+
 def start(update, context):
     """Send a welcome message with inline keyboard"""
+
+    email_url = safe_mailto(CONTACT_EMAIL)
+
     keyboard = [
-    [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
-    [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
-    [InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)],
-    [InlineKeyboardButton("📞 Contact Info", callback_data='contact')],
-    [InlineKeyboardButton("📧 Send Email", url=f"mailto:{CONTACT_EMAIL}")]
-    [InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)]
+        [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
+        [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
+        [InlineKeyboardButton("📱 Registration Bot", url=REGISTRATION_BOT_URL)],
+        [InlineKeyboardButton("📞 Contact Info", callback_data='contact')],
     ]
+
+    # Add email button only if valid
+    if email_url:
+        keyboard.append(
+            [InlineKeyboardButton("📧 Send Email", url=email_url)]
+        )
+
+    # Website button (always valid)
+    keyboard.append(
+        [InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)]
+    )
+
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
+
     welcome_text = """
 ✨ *Welcome to Yetal - Ethiopia's Digital Marketplace!* ✨
 
 🎯 *What is Yetal?*
-Yetal is Ethiopia's premier e-commerce platform revolutionizing how Ethiopians buy and sell online. We connect buyers and sellers across the country with trust and convenience.
+Yetal is Ethiopia's premier e-commerce platform revolutionizing how Ethiopians buy and sell online.
 
 🚀 *Why Choose Yetal?*
 • 🇪🇹 100% Ethiopian Platform
@@ -164,12 +182,13 @@ Yetal is Ethiopia's premier e-commerce platform revolutionizing how Ethiopians b
 
 Use the buttons below to explore more about what Yetal offers!
 """
-    
+
     update.message.reply_text(
         welcome_text,
         reply_markup=reply_markup,
         parse_mode=ParseMode.MARKDOWN
     )
+
 
 def show_rewards(update, context):
     """Show rewards program information"""
@@ -494,9 +513,9 @@ def main():
     # Add command handlers
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("about", about))
-    dp.add_handler(CommandHandler("rewards", show_rewards))
-    dp.add_handler(CommandHandler("discounts", show_discounts))
-    dp.add_handler(CommandHandler("contact", show_contact))
+    # dp.add_handler(CommandHandler("rewards", show_rewards))
+    # dp.add_handler(CommandHandler("discounts", show_discounts))
+    # dp.add_handler(CommandHandler("contact", show_contact))
     dp.add_handler(CommandHandler("help", help_command))
     dp.add_handler(CommandHandler("register", register))
     
