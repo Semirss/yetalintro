@@ -172,14 +172,12 @@ def webhook():
     except Exception as e:
         print(f"❌ Webhook error: {e}")
         return 'error', 500
-
-# Telegram bot handlers (keep all your existing handler functions exactly as before)
 def start(update, context):
     """Send a welcome message with inline keyboard"""
     keyboard = [
-    [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
-    [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
-    [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
+        [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
+        [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
+        [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
     if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
@@ -194,13 +192,13 @@ def start(update, context):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    welcome_text = """
-    v={BOT_VERSION}
-    
-✨ *Welcome to Yetal – Smart Search Platform!* ✨
+    welcome_text = f"""
+*✨ Welcome to Yetal – Smart Search Platform! ✨*
+
+*v{BOT_VERSION}*
 
 🔎 *What is Yetal?*
-Yetal helps people *discover products, services, shops, and offers that is— fast, simple, and reliable.
+Yetal helps people discover products, services, shops, and offers that is— fast, simple, and reliable.
 
 🚀 *What You Can Do on Yetal*
 • 🔍 Search for products & services  
@@ -217,7 +215,6 @@ Yetal helps people *discover products, services, shops, and offers that is— fa
 
 Use the buttons below to explore Yetal 👇
 """
-
 
     update.message.reply_text(
         welcome_text,
