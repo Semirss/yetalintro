@@ -3,6 +3,7 @@ import time
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
+import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, Bot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, Dispatcher
 from flask import Flask, render_template_string, request
@@ -10,6 +11,7 @@ import threading
 
 # Load environment variables
 load_dotenv()
+BOT_VERSION = "1.2.0"
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CODE = os.getenv("ADMIN_CODE")
 REGISTRATION_BOT_URL = os.getenv("REGISTRATION_BOT_URL", "https://t.me/YourRegistrationBot")
@@ -176,6 +178,7 @@ def start(update, context):
     """Send a welcome message with inline keyboard"""
     keyboard = [
     [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
+    [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
     [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
@@ -192,20 +195,29 @@ def start(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     welcome_text = """
-✨ *Welcome to Yetal - Ethiopia's Digital Marketplace!* ✨
+    v={BOT_VERSION}
+    
+✨ *Welcome to Yetal – Smart Search Platform!* ✨
 
-🎯 *What is Yetal?*
-Yetal is Ethiopia's premier e-commerce platform revolutionizing how Ethiopians buy and sell online.
+🔎 *What is Yetal?*
+Yetal helps people *discover products, services, shops, and offers that is— fast, simple, and reliable.
 
-🚀 *Why Choose Yetal?*
-• 🇪🇹 100% Ethiopian Platform
-• 🔒 Secure Transactions
-• 🚚 Nationwide Delivery
-• 💬 24/7 Customer Support
-• 📱 User-Friendly Interface
+🚀 *What You Can Do on Yetal*
+• 🔍 Search for products & services  
+• 🏪 Discover verified shops  
+• 📢 View promotions  
+• 📍 Find sellers near you  
+• 📱 Connect directly with businesses  
 
-Use the buttons below to explore more about what Yetal offers!
+👥 *For Businesses*
+• Advertise your products  
+• Reach targeted customers  
+• Get discovered faster  
+• Grow your visibility nationwide  
+
+Use the buttons below to explore Yetal 👇
 """
+
 
     update.message.reply_text(
         welcome_text,
@@ -272,30 +284,30 @@ def show_rewards(update, context):
     query.answer()
     
     rewards_text = """
-🏆 *Yetal Rewards Program* 🏆
+🌟 *Why Use Yetal?* 🌟
 
-Earn amazing rewards with every purchase on Yetal!
+Yetal is built to make searching smarter and business discovery easier.
 
-🎁 *Reward Tiers:*
-• 🥉 *Bronze Member:* Sign up bonus - 500 points
-• 🥈 *Silver Member:* After 5 purchases - 5% cashback
-• 🥇 *Gold Member:* After 15 purchases - 10% cashback + free shipping
-• 💎 *Platinum Member:* After 30 purchases - 15% cashback + priority support
+🔍 *For Users*
+• Find products & services instantly  
+• Compare offers from different sellers  
+• Discover trusted local businesses  
+• Save time & effort  
 
-💰 *How to Earn Points:*
-1. Make purchases - 10 points per 100 Birr
-2. Refer friends - 1000 points per successful referral
-3. Write reviews - 50 points per helpful review
-4. Daily check-ins - 10 points daily
+🏪 *For Businesses*
+• Advertise without building a website  
+• Appear in user searches  
+• Reach customers by location & category  
+• Affordable promotion plans  
 
-🎯 *Redeem Points For:*
-• 🛒 Shopping vouchers
-• 🚚 Free shipping
-• 📱 Mobile airtime
-• 💳 Cash discounts
+📈 *Why It Works*
+• Search-based discovery  
+• Real users, real businesses  
+• Designed for Ethiopia  
 
-*Current Promotion:* Double points on your first 3 purchases! 🎉
+Yetal connects people with what they need — faster.
 """
+
     
     keyboard = [[InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')]]
     
@@ -317,32 +329,7 @@ def show_discounts(update, context):
     
     discounts_text = """
 💎 *Special Discounts & Promotions* 💎
-
-🔥 *Flash Sales (Limited Time!)*
-• ⏰ Electronics: 40% OFF - Today only!
-• 👗 Fashion: Buy 2 Get 1 FREE
-• 🏠 Home Goods: 30% OFF sitewide
-
-🎯 *Category Discounts:*
-• 📱 Smartphones: Up to 35% OFF
-• 👟 Shoes: 25% OFF all brands
-• 💄 Beauty: 20% OFF + free gift
-• 🏋️ Sports: Buy 1 Get 50% OFF on second item
-
-✨ *Weekly Deals:*
-• 🎁 Monday: Fresh produce - 15% OFF
-• 💰 Tuesday: Electronics - 20% OFF
-• 🛍️ Wednesday: Fashion - 25% OFF
-• 🏠 Thursday: Home decor - 30% OFF
-• 📦 Friday: Everything - 10% OFF
-• 🎉 Weekend: Mega sale - Up to 50% OFF
-
-🎊 *New User Offers:*
-1. First purchase: 25% OFF
-2. Free shipping on orders above 500 Birr
-3. Welcome gift worth 200 Birr
-
-*Use code: YETALWELCOME for extra 10% off!* 🎫
+coming soon...
 """
     
     keyboard = [[InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')]]
@@ -376,13 +363,7 @@ Here's how to reach us:
 
 🌐 *Website:* {WEBSITE_URL or "https://yetal.com"}
 
-🏢 *Office Address:*
-Bole Road, Addis Ababa, Ethiopia
 
-⏰ *Business Hours:*
-Monday - Friday: 8:30 AM - 6:30 PM
-Saturday: 9:00 AM - 4:00 PM
-Sunday: Closed
 
 📧 *For urgent inquiries, please email us directly at:* {CONTACT_EMAIL or "contact@yetal.com"}
 """
@@ -404,6 +385,7 @@ def back_to_main(update, context):
     
     keyboard = [
         [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
+        [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
         [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
     ]
     
@@ -420,17 +402,18 @@ def back_to_main(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     main_text = """
-✨ *Yetal - Your Digital Marketplace!* ✨
+✨ *Yetal – Smart Search & Discovery!* ✨
 
 Welcome back! What would you like to explore today?
 
 🎯 *Quick Links:*
-• 🏆 Rewards Program - Earn points on every purchase
-• 💎 Special Discounts - Amazing deals waiting for you
-• 📞 Contact Us - We're here to help 24/7
-• 🌐 Website - Visit our full platform
-• 📱 If u are a shop owner use this to register
-*New this week:* Mega Summer Sale with up to 60% OFF! 🎉
+• 🔍 Discover Businesses & Services
+• 📢 View Promotions & Featured Listings
+• 📞 Contact Us – We’re here to help
+• 🌐 Website – Explore the full platform
+• 📱 Shop owners: Register your business to get discovered
+
+*New this week:* Featured listings and boosted visibility for top searches 🚀
 """
     
     query.edit_message_text(
@@ -442,36 +425,35 @@ Welcome back! What would you like to explore today?
 def about(update, context):
     """Detailed information about Yetal"""
     about_text = """
-🏪 *About Yetal - Ethiopia's E-Commerce Revolution* 🏪
+🔎 *About Yetal – Ethiopia’s Digital Search Hub* 🔎
 
-🌟 *Our Story:*
-Founded in 2023, Yetal was born from a vision to transform Ethiopia's digital commerce landscape. We're building a platform where every Ethiopian can buy and sell with confidence.
+🌍 *Our Purpose*
+Yetal was created to solve one problem:
+*People struggle to find the right products and services online.*
 
-🎯 *Our Mission:*
-To empower Ethiopian businesses and consumers through accessible, secure, and innovative e-commerce solutions.
+We make discovery simple.
 
-📊 *Our Impact:*
-• 50,000+ registered users
-• 5,000+ active sellers
-• 100,000+ products listed
-• 95% customer satisfaction rate
-• Delivery to 50+ cities across Ethiopia
+🎯 *What We Do*
+• Index shops, products & services  
+• Help users search & compare  
+• Promote businesses
+• Connect buyers directly with sellers  
 
-🔒 *Why Trust Yetal?*
-• ✅ Verified sellers only
-• 🔒 Secure payment gateway
-• 📦 Insured deliveries
-• 💬 Real-time tracking
-• ⭐ Customer reviews & ratings
+🏪 *Who Uses Yetal?*
+• Customers searching for options  
+• Shops wanting visibility  
+• Service providers advertising locally  
 
-🤝 *Our Values:*
-• 🇪🇹 Patriotism - Supporting local businesses
-• 🔓 Transparency - Clear pricing & policies
-• 💝 Community - Building together
-• 🚀 Innovation - Always improving
+🔒 *Trust & Transparency*
+• Verified business listings  
+• Clear contact information  
+• No hidden transactions  
+• User-focused design  
 
-*Join us in revolutionizing Ethiopian e-commerce!* 🎉
+🚀 *Our Vision*
+To become Ethiopia’s most trusted search and discovery platform.
 """
+
     
     keyboard = [
         [InlineKeyboardButton("🏆 Rewards", callback_data='rewards')],
@@ -501,15 +483,13 @@ Here are all available commands:
 📋 *Main Commands:*
 • /start - Welcome message and main menu
 • /about - Learn about Yetal
-• /rewards - View rewards program details
-• /discounts - See current promotions
 • /contact - Contact information
 • /register - Get registration bot link
 • /help - Show this help message
 
 📞 *Contact Information:*
-• Email: contact@yetal.com
-• Phone: +251 911 234 567
+• Email: yetal@gmail.com
+• Phone: +251 911 234 565
 • Telegram: @YetalSupport
 • Website: https://yetal.com
 
@@ -526,29 +506,20 @@ def register(update, context):
     register_text = """
 📱 *Register Your Business on Yetal* 📱
 
-Ready to start selling on Ethiopia's fastest-growing e-commerce platform?
+Get discovered by customers searching every day.
 
-🚀 *Registration Benefits:*
-• 📍 Free business listing
-• 🎯 Reach thousands of customers
-• 📦 Delivery support
-• 💳 Secure payment processing
-• 🛡️ Seller protection
-• 📊 Sales analytics
+🚀 *Why Register?*
+• 🔍 Appear in search results  
+• 📍 Reach local customers  
+• 📢 Promote your services or products  
+• 📈 Increase visibility & inquiries  
 
-📝 *Registration Process:*
-1. Click the button below to access our Registration Bot
-2. Provide basic business information
-3. Upload required documents
-4. Get verified within 24 hours
-5. Start listing your products!
+📝 *How It Works*
+1. Register your business  
+2. Add products or services   
+3. Customers find & contact you directly  
 
-⏱️ *Quick Registration:* Complete in under 10 minutes!
-
-*Special Offer for New Sellers:*
-• 🎁 First month commission FREE
-• 📈 Featured listing for 30 days
-• 🚚 Free delivery setup assistance
+⏱️ Registration takes less than 10 minutes.
 """
     
     keyboard = []
@@ -603,6 +574,20 @@ We'll help you get registered as soon as possible!
         reply_markup=reply_markup,
         parse_mode=ParseMode.MARKDOWN
     )
+def contact_command(update, context):
+    contact_text = f"""
+📞 *Contact Yetal* 📞
+
+📧 *Email:* {CONTACT_EMAIL}
+📱 *Phone:* +251 911 234 567
+📱 *Telegram:* @YetalSupport
+🌐 *Website:* {WEBSITE_URL}
+"""
+
+    update.message.reply_text(
+        contact_text,
+        parse_mode=ParseMode.MARKDOWN
+    )
 
 def unknown(update, context):
     """Handle unknown commands"""
@@ -628,8 +613,7 @@ def setup_bot():
         dispatcher_instance.add_handler(CommandHandler("start", start))
         dispatcher_instance.add_handler(CommandHandler("about", about))
         dispatcher_instance.add_handler(CommandHandler("help", help_command))
-        dispatcher_instance.add_handler(CommandHandler("register", register))
-        
+        dispatcher_instance.add_handler(CommandHandler("contact", contact_command))
         # Add callback query handlers
         dispatcher_instance.add_handler(CallbackQueryHandler(show_rewards, pattern='^rewards$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(show_daily_promo, pattern='^daily_promo$'))
@@ -673,22 +657,13 @@ def start_flask():
 def keep_alive():
     """Background thread to keep the service alive"""
     while True:
-        # Log heartbeat
-        print(f"💓 Heartbeat: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Bot is alive")
-        
-        # Check webhook status periodically
         try:
-            if bot_instance:
-                webhook_info = bot_instance.get_webhook_info()
-                if webhook_info.url:
-                    print(f"🔗 Webhook active: {webhook_info.url}")
-                else:
-                    print("⚠️ Webhook not set, reconfiguring...")
-                    setup_bot()
+            requests.get(f"{RENDER_EXTERNAL_URL}/health", timeout=5)
+            print("💓 Keep-alive ping sent")
         except Exception as e:
-            print(f"⚠️ Webhook check failed: {e}")
-        
-        time.sleep(300)  # Check every 5 minutes
+            print("⚠️ Keep-alive ping failed:", e)
+
+        time.sleep(240) 
 
 def main():
     """Main function to start everything"""
