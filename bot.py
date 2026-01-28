@@ -176,11 +176,9 @@ def start(update, context):
     """Send a welcome message with inline keyboard"""
     keyboard = [
         [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
-        [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
-        [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
+        [InlineKeyboardButton("ℹ️ About yetal", callback_data='about')],
     ]
-    
-   
+
     keyboard.append([InlineKeyboardButton("📞 Contact Info", callback_data='contact')])
     
     if WEBSITE_URL and WEBSITE_URL.startswith('http'):
@@ -193,25 +191,16 @@ def start(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     welcome_text = f"""
-*✨ Welcome to Yetal – Smart Search Platform! ✨*
+*✨ hi i'm Yetal*
 
-*v{BOT_VERSION}*
+🔎 *pick your option*
 
-🔎 *What is Yetal?*
-Yetal helps people discover products, services, shops, and offers that is— fast, simple, and reliable.
+• 🔥 *Daily subscription promo = Information about what yetal is offering daily*
+• ℹ️ About yetal= Information about yetal
+• 📞 Contact us = if you need support contact us using this 
+• 🌐 Visit website = explore yetals website   
+• 📱 if u are a shop owner use this to register = it will take you to the bot 
 
-🚀 *What You Can Do on Yetal*
-• 🔍 Search for products & services  
-• 🏪 Discover verified shops  
-• 📢 View promotions  
-• 📍 Find sellers near you  
-• 📱 Connect directly with businesses  
-
-👥 *For Businesses*
-• Advertise your products  
-• Reach targeted customers  
-• Get discovered faster  
-• Grow your visibility nationwide  
 
 Use the buttons below to explore Yetal 👇
 """
@@ -365,8 +354,22 @@ Here's how to reach us:
 📧 *For urgent inquiries, please email us directly at:* {CONTACT_EMAIL or "contact@yetal.com"}
 """
     
-    keyboard = [[InlineKeyboardButton("🔙 Back to Main Menu", callback_data='main_menu')]]
+    keyboard = [
+        [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
+        [InlineKeyboardButton("ℹ️ About yetal", callback_data='about')],
+
+    ]
     
+
+    
+    keyboard.append([InlineKeyboardButton("📞 Contact Us", callback_data='contact')])
+    
+    if WEBSITE_URL and WEBSITE_URL.startswith('http'):
+        keyboard.append([InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)])
+    if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", url=REGISTRATION_BOT_URL)])
+    else:
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", callback_data='register_info')])  
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     query.edit_message_text(
@@ -382,8 +385,8 @@ def back_to_main(update, context):
     
     keyboard = [
         [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
-        [InlineKeyboardButton("🏆 Rewards Program", callback_data='rewards')],
-        [InlineKeyboardButton("💎 Special Discounts", callback_data='discounts')],
+        [InlineKeyboardButton("ℹ️ About yetal", callback_data='about')],
+
     ]
     
 
@@ -399,18 +402,18 @@ def back_to_main(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     main_text = """
-✨ *Yetal – Smart Search & Discovery!* ✨
+*✨ hi i'm Yetal*
 
-Welcome back! What would you like to explore today?
+🔎 *pick your option*
 
-🎯 *Quick Links:*
-• 🔍 Discover Businesses & Services
-• 📢 View Promotions & Featured Listings
-• 📞 Contact Us – We’re here to help
-• 🌐 Website – Explore the full platform
-• 📱 Shop owners: Register your business to get discovered
+• 🔥 *Daily subscription promo = Information about what yetal is offering daily*
+• ℹ️ About yetal= Information about yetal
+• 📞 Contact us = if you need support contact us using this 
+• 🌐 Visit website = explore yetals website   
+• 📱 if u are a shop owner use this to register = it will take you to the bot 
 
-*New this week:* Featured listings and boosted visibility for top searches 🚀
+
+Use the buttons below to explore Yetal 👇
 """
     
     query.edit_message_text(
@@ -453,15 +456,21 @@ To become Ethiopia’s most trusted search and discovery platform.
 
     
     keyboard = [
-        [InlineKeyboardButton("🏆 Rewards", callback_data='rewards')],
-        [InlineKeyboardButton("💎 Discounts", callback_data='discounts')],
+        [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
+        [InlineKeyboardButton("ℹ️ About yetal", callback_data='about')],
+
     ]
     
-    if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
-        keyboard.append([InlineKeyboardButton("📱 Register Now", url=REGISTRATION_BOT_URL)])
-    else:
-        keyboard.append([InlineKeyboardButton("📱 Register Now", callback_data='register_info')])
+
     
+    keyboard.append([InlineKeyboardButton("📞 Contact Us", callback_data='contact')])
+    
+    if WEBSITE_URL and WEBSITE_URL.startswith('http'):
+        keyboard.append([InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)])
+    if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", url=REGISTRATION_BOT_URL)])
+    else:
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", callback_data='register_info')])  
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     update.message.reply_text(
