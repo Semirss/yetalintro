@@ -195,11 +195,11 @@ def start(update, context):
 
 🔎 *pick your option*
 
-• 🔥 *Daily subscription promo = Information about what yetal is offering daily*
+• 🔥 *Daily subscription = daily offers*
 • ℹ️ About yetal= Information about yetal
 • 📞 Contact us = if you need support contact us using this 
 • 🌐 Visit website = explore yetals website   
-• 📱 if u are a shop owner use this to register = it will take you to the bot 
+• 📱 if u are a shop owner use this to register = This is for shop owners  
 
 
 Use the buttons below to explore Yetal 👇
@@ -406,11 +406,11 @@ def back_to_main(update, context):
 
 🔎 *pick your option*
 
-• 🔥 *Daily subscription promo = Information about what yetal is offering daily*
+• 🔥 *Daily subscription = daily offers*
 • ℹ️ About yetal= Information about yetal
 • 📞 Contact us = if you need support contact us using this 
 • 🌐 Visit website = explore yetals website   
-• 📱 if u are a shop owner use this to register = it will take you to the bot 
+• 📱 if u are a shop owner use this to register = This is for shop owners  
 
 
 Use the buttons below to explore Yetal 👇
@@ -625,6 +625,7 @@ def setup_bot():
         dispatcher_instance.add_handler(CallbackQueryHandler(show_daily_promo, pattern='^daily_promo$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
+        dispatcher_instance.add_handler(CallbackQueryHandler(about, pattern='^about$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(register_info, pattern='^register_info$'))
         
