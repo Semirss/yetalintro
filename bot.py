@@ -421,11 +421,13 @@ Use the buttons below to explore Yetal 👇
         reply_markup=reply_markup,
         parse_mode=ParseMode.MARKDOWN
     )
-
-def about(update, context):
-    """Detailed information about Yetal"""
+def showabout(update, context):
+    """Detailed information about Yetal - FIXED VERSION"""
+    query = update.callback_query
+    query.answer()
+    
     about_text = """
-🔎 *About Yetal – Ethiopia’s Digital Search Hub* 🔎
+🔎 *About Yetal – Ethiopia's Digital Search Hub* 🔎
 
 🌍 *Our Purpose*
 Yetal was created to solve one problem:
@@ -451,34 +453,119 @@ We make discovery simple.
 • User-focused design  
 
 🚀 *Our Vision*
-To become Ethiopia’s most trusted search and discovery platform.
+To become Ethiopia's most trusted search and discovery platform.
 """
 
-    
     keyboard = [
         [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
         [InlineKeyboardButton("ℹ️ About yetal", callback_data='about')],
-
+        [InlineKeyboardButton("📞 Contact Us", callback_data='contact')],
     ]
-    
-
-    
-    keyboard.append([InlineKeyboardButton("📞 Contact Us", callback_data='contact')])
     
     if WEBSITE_URL and WEBSITE_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)])
     if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
         keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", url=REGISTRATION_BOT_URL)])
     else:
-        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", callback_data='register_info')])  
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", callback_data='register_info')])
+    
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    update.message.reply_text(
+    query.edit_message_text(
         about_text,
         reply_markup=reply_markup,
         parse_mode=ParseMode.MARKDOWN
     )
+def about_command(update, context):
+    """Handle /about command"""
+    update.message.reply_text(
+        """
+🔎 *About Yetal – Ethiopia's Digital Search Hub* 🔎
 
+🌍 *Our Purpose*
+Yetal was created to solve one problem:
+*People struggle to find the right products and services online.*
+
+We make discovery simple.
+
+🎯 *What We Do*
+• Index shops, products & services  
+• Help users search & compare  
+• Promote businesses
+• Connect buyers directly with sellers  
+
+🏪 *Who Uses Yetal?*
+• Customers searching for options  
+• Shops wanting visibility  
+• Service providers advertising locally  
+
+🔒 *Trust & Transparency*
+• Verified business listings  
+• Clear contact information  
+• No hidden transactions  
+• User-focused design  
+
+🚀 *Our Vision*
+To become Ethiopia's most trusted search and discovery platform.
+""",
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+def showabout(update, context):
+    """Handle about button callback - FIXED VERSION"""
+    query = update.callback_query
+    query.answer()
+    
+    about_text = """
+🔎 *About Yetal – Ethiopia's Digital Search Hub* 🔎
+
+🌍 *Our Purpose*
+Yetal was created to solve one problem:
+*People struggle to find the right products and services online.*
+
+We make discovery simple.
+
+🎯 *What We Do*
+• Index shops, products & services  
+• Help users search & compare  
+• Promote businesses
+• Connect buyers directly with sellers  
+
+🏪 *Who Uses Yetal?*
+• Customers searching for options  
+• Shops wanting visibility  
+• Service providers advertising locally  
+
+🔒 *Trust & Transparency*
+• Verified business listings  
+• Clear contact information  
+• No hidden transactions  
+• User-focused design  
+
+🚀 *Our Vision*
+To become Ethiopia's most trusted search and discovery platform.
+"""
+
+    keyboard = [
+        [InlineKeyboardButton("🔥 Daily Subscription Promo", callback_data='daily_promo')],
+        [InlineKeyboardButton("ℹ️ About yetal", callback_data='about')],
+        [InlineKeyboardButton("📞 Contact Us", callback_data='contact')],
+    ]
+    
+    if WEBSITE_URL and WEBSITE_URL.startswith('http'):
+        keyboard.append([InlineKeyboardButton("🌐 Visit Website", url=WEBSITE_URL)])
+    if REGISTRATION_BOT_URL and REGISTRATION_BOT_URL.startswith('http'):
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", url=REGISTRATION_BOT_URL)])
+    else:
+        keyboard.append([InlineKeyboardButton("📱 If u are a shop owner use this to register", callback_data='register_info')])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    query.edit_message_text(
+        about_text,
+        reply_markup=reply_markup,
+        parse_mode=ParseMode.MARKDOWN
+    )
 def help_command(update, context):
     """Help command with all available commands"""
     help_text = """
@@ -617,7 +704,7 @@ def setup_bot():
         
         # Add command handlers
         dispatcher_instance.add_handler(CommandHandler("start", start))
-        dispatcher_instance.add_handler(CommandHandler("about", about))
+        dispatcher_instance.add_handler(CommandHandler("about", about_command))
         dispatcher_instance.add_handler(CommandHandler("help", help_command))
         dispatcher_instance.add_handler(CommandHandler("contact", contact_command))
         # Add callback query handlers
@@ -625,7 +712,7 @@ def setup_bot():
         dispatcher_instance.add_handler(CallbackQueryHandler(show_daily_promo, pattern='^daily_promo$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(show_discounts, pattern='^discounts$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(show_contact, pattern='^contact$'))
-        dispatcher_instance.add_handler(CallbackQueryHandler(about, pattern='^about$'))
+        dispatcher_instance.add_handler(CallbackQueryHandler(showabout, pattern='^about$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(back_to_main, pattern='^main_menu$'))
         dispatcher_instance.add_handler(CallbackQueryHandler(register_info, pattern='^register_info$'))
         
