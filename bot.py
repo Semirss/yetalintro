@@ -197,7 +197,7 @@ def start(update, context):
 
 • 🔥 *Daily subscription = daily offers*
 • ℹ️ About yetal= Information about yetal
-• 📞 Contact us = if you need support contact us using this 
+• 📞 Contact us = customer support
 • 🌐 Visit website = explore yetals website   
 • 📱 if u are a shop owner use this to register = This is for shop owners  
 
@@ -408,7 +408,7 @@ def back_to_main(update, context):
 
 • 🔥 *Daily subscription = daily offers*
 • ℹ️ About yetal= Information about yetal
-• 📞 Contact us = if you need support contact us using this 
+• 📞 Contact us = customer support
 • 🌐 Visit website = explore yetals website   
 • 📱 if u are a shop owner use this to register = This is for shop owners  
 
